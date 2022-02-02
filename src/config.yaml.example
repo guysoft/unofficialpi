@@ -1,0 +1,7 @@
+sftp:
+  hostname: 'sftp hostname'
+  username: 'username'
+  password: 'password'
+web:
+  url: "https://example.org"
+  
