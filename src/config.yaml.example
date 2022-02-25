@@ -4,4 +4,5 @@ sftp:
   password: 'password'
 web:
   url: "https://example.org"
-  
+io:
+  tmp: "default"

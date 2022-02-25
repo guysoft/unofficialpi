@@ -8,17 +8,17 @@ import yaml
 
 # Example output: https://unofficialpi.org/rpi-imager/rpi-imager-octopi-klipper.json
 
-def get_folder_json(sftp, folder, max_count, is_nightly=False):
+def get_folder_json(sftp, tmp_prefix, folder, max_count, is_nightly=False):
     return_value = []
     count = max_count
-    with TemporaryDirectory() as temp_dir:
+    with TemporaryDirectory(dir=tmp_prefix) as temp_dir:
         with sftp.cd(folder):             # temporarily chdir to public
             for file_path_basename in sftp.listdir():
                 file_full_path = distro_folder + "/" + file_path_basename
                 if file_path_basename.endswith(".json"):
                     count -= 1
                     if count < 0:
-                        return
+                        return []
                     
                     print(file_path_basename)
                     sftp.get(file_path_basename, localpath=os.path.join(temp_dir, file_path_basename))
@@ -51,6 +51,8 @@ if __name__ == "__main__":
     distro_folder = "/Distros/" + distro_name
     nightly = distro_folder + "/" + "nightly"
 
+    nightly64 = distro_folder + "/" + "nightly-arm64"
+
     json_list_output_path = "/rpi-imager/rpi-imager-" + distro_name.lower() + ".json"
     
     settings = None
@@ -65,13 +67,16 @@ if __name__ == "__main__":
     username = settings["sftp"]["username"]
     password = settings["sftp"]["password"]
     url = settings["web"]["url"]
+    tmp_prefix = settings["io"]["tmp"]
+    if tmp_prefix == "default":
+        tmp_prefix = None
         
     with pysftp.Connection(hostname, username=username, password=password) as sftp:
-        os_list = get_folder_json(sftp, distro_folder, 1) + get_folder_json(sftp, nightly, 2, True)
+        os_list = get_folder_json(sftp, tmp_prefix, distro_folder, 1) + get_folder_json(sftp, tmp_prefix, nightly, 2, True) + get_folder_json(sftp, tmp_prefix, nightly64, 2, True)
         
         output_json = {"os_list": os_list}
         
-        tmp_file =  mktemp(suffix=".json")
+        tmp_file =  mktemp(suffix=".json", dir=tmp_prefix)
             
         with open(tmp_file, "w") as w:
             json.dump(output_json, w, indent=2)
@@ -84,7 +89,7 @@ if __name__ == "__main__":
         os.unlink(tmp_file)
         
         
-        # get_folder_json(sftp, distro_folder, 3)
+        # get_folder_json(sftp, tmp_prefix, distro_folder, 3)
         
         
         
