@@ -12,18 +12,19 @@ def get_folder_json(sftp, tmp_prefix, folder, max_count, is_nightly=False):
     return_value = []
     count = max_count
     with TemporaryDirectory(dir=tmp_prefix) as temp_dir:
+        print("Checking folder: " + str(folder))
         with sftp.cd(folder):             # temporarily chdir to public
-            for file_path_basename in sftp.listdir():
+            remote_files = [x.filename for x in sorted(sftp.listdir_attr(), key = lambda f: f.st_mtime, reverse=True)]
+            for file_path_basename in remote_files:
                 file_full_path = distro_folder + "/" + file_path_basename
                 if file_path_basename.endswith(".json"):
                     count -= 1
                     if count < 0:
-                        return []
+                        break
                     
                     print(file_path_basename)
                     sftp.get(file_path_basename, localpath=os.path.join(temp_dir, file_path_basename))
-        
-        for file_path in os.listdir(temp_dir):
+        for file_path in sorted(os.listdir(temp_dir), reverse=True):
             full_path = os.path.join(temp_dir, file_path)
             json_data = None
             with open(full_path) as f:
@@ -85,7 +86,7 @@ if __name__ == "__main__":
         if sftp.isfile(json_list_output_path):
             sftp.remove(json_list_output_path)
         sftp.put(tmp_file, remotepath=json_list_output_path)
-            
+        
         os.unlink(tmp_file)
         
         
