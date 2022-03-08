@@ -11,6 +11,9 @@ import yaml
 def get_folder_json(sftp, tmp_prefix, folder, max_count, is_nightly=False):
     return_value = []
     count = max_count
+    if not sftp.exists(folder):
+        print("Skipping non-existent folder: " + str(folder))
+        return return_value
     with TemporaryDirectory(dir=tmp_prefix) as temp_dir:
         print("Checking folder: " + str(folder))
         with sftp.cd(folder):             # temporarily chdir to public
