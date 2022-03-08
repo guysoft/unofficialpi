@@ -39,6 +39,9 @@ def get_folder_json(sftp, tmp_prefix, folder, max_count, is_nightly=False):
             else:
                 json_data["name"] += " (Stable)"
             json_data["url"] = url + folder + "/" + date_stamp + "_" + json_data["url"]
+
+            # inject init format
+            json_data["init_format"] = "systemd"
             # os.system("ls -l " + temp_dir)
 
     return return_value
