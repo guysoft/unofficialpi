@@ -35,6 +35,7 @@ def get_folder_json(sftp, tmp_prefix, folder, max_count, is_nightly=False):
             return_value.append(json_data)
             date_stamp = file_path.split("_")[0]
             if is_nightly:
+                print(json_data["name"])
                 json_data["name"] += " (Nightly)"
             else:
                 json_data["name"] += " (Stable)"
