@@ -6,9 +6,26 @@ import os
 import io
 import yaml
 
+DEVICES_ALL = [
+    "pi1-32bit",
+    "pi2-32bit",
+	"pi3-32bit",
+	"pi3-64bit",
+	"pi4-32bit",
+	"pi4-64bit",
+	"pi5-32bit",
+	"pi5-64bit"
+]
+
+DEVICES_ARM64 = [
+	"pi3-64bit",
+	"pi4-64bit",
+	"pi5-64bit"
+]
+
 # Example output: https://unofficialpi.org/rpi-imager/rpi-imager-octopi-klipper.json
 
-def get_folder_json(sftp, tmp_prefix, folder, max_count, is_nightly=False):
+def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False):
     return_value = []
     count = max_count
     if not sftp.exists(folder):
@@ -39,6 +56,15 @@ def get_folder_json(sftp, tmp_prefix, folder, max_count, is_nightly=False):
                 json_data["name"] += " (Nightly)"
             else:
                 json_data["name"] += " (Stable)"
+
+            # Handle device list
+            devices_list = DEVICES_ALL
+            if arch == "arm64" or "64-bit" in json_data["name"]:
+                devices_list = DEVICES_ARM64
+
+            if "devices" not in json_data:
+                json_data["devices"] = devices_list
+
             json_data["url"] = url + folder + "/" + date_stamp + "_" + json_data["url"]
 
             # inject init format
@@ -80,7 +106,10 @@ if __name__ == "__main__":
         tmp_prefix = None
         
     with pysftp.Connection(hostname, username=username, password=password) as sftp:
-        os_list = get_folder_json(sftp, tmp_prefix, distro_folder, 1) + get_folder_json(sftp, tmp_prefix, nightly, 2, True) + get_folder_json(sftp, tmp_prefix, nightly64, 2, True)
+        os_list = \
+            get_folder_json(sftp, tmp_prefix, distro_folder, None, 1) + \
+                get_folder_json(sftp, tmp_prefix, nightly, None, 2, True) + \
+                    get_folder_json(sftp, tmp_prefix, nightly64, "arm64", 2, True)
         
         output_json = {"os_list": os_list}
         
