@@ -1,0 +1,16 @@
+/* Requires the Docker Pipeline plugin */
+pipeline {
+    agent { label 'master' }
+    stages {
+        stage ('OctoPi') {
+            steps {
+                build job: 'OctoPi'
+            }
+        }
+        stage ('OctoPi - arm64') {
+            steps {
+                build job: 'OctoPi - arm64'
+            }
+        }
+    }
+}
