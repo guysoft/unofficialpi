@@ -2,10 +2,11 @@
 pipeline {
     agent { label 'master' }
     stages {
-        stage('build') {
-            steps {
-               echo "yay" 
-            }
+        stage ('FullPageOS') {
+            build job: 'FullPageOS'
+        }
+        stage ('FullPageOS non accelration') {
+            build job: 'FullPageOS - noacc'
         }
     }
 }
