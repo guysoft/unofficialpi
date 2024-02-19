@@ -1,0 +1,52 @@
+// This is a declerative pipeline
+/* Requires the Docker Pipeline plugin */
+// properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '200')), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], parameters([string(defaultValue: '/mnt/sdc1/ElectricSheepPi', name: 'DISTRO_PATH'), string(defaultValue: '/Distros/ElectricSheepPi/nightly', name: 'FTP_PUBLISH_PATH'), string('VARIANT')]), throttleJobProperty(categories: [], limitOneJobWithMatchingParams: false, maxConcurrentPerNode: 2, maxConcurrentTotal: 2, paramsToUseForLimit: '', throttleEnabled: true, throttleOption: 'project'), pipelineTriggers([cron('0 2 * * *')])])
+pipeline {
+    agent { label 'master' }
+    options {
+        // This is required if you want to clean before build
+        skipDefaultCheckout(true)
+        timestamps ()
+        ansiColor('xterm')
+        timeout(time: 24, activity: true, unit: 'HOURS')
+    }
+    stages {
+        stage ('Build') {
+            steps {
+                // Clean before build
+                cleanWs()
+                // We need to explicitly checkout from SCM here if using cleanWs()
+                // checkout scm
+                sh '/mnt/sda1/unofficialpi/src/build_custom_pi_os_jenkins.sh'
+                step([$class: 'LogParserPublisher', parsingRulesPath: '/mnt/sda1/CustomPiOS/src/misc/jenkins-ci/console_parsing2', showGraphs: true, unstableOnWarning: true, useProjectRule: false])
+            }
+        }
+        stage ('Upload') {
+            steps {
+                script {
+                    def props = readProperties  file:"/mnt/sda1/unofficialpi/upload_cache/custompios/${BUILD_NUMBER}/upload_this"
+                    def variables = build job: 'unofficialpi_publish', parameters: props.collect {string(name: it.key, value: it.value)}
+                    def vars = variables.getBuildVariables()
+                    env.Directory = vars.Directory
+                }
+            }
+        }
+        stage ('Publish') {
+            steps {
+                script {
+                    build job: 'unofficialpi_update_rpi-imager', parameters: [string(name: 'Directory', value: env.Directory)]
+                }
+            }
+        }
+    }
+    post {
+        failure {
+            emailext (
+                to: '$DEFAULT_RECIPIENTS, guysoft@gmail.com',
+                replyTo: '$DEFAULT_REPLYTO',
+                subject: '$DEFAULT_SUBJECT',
+                body: '$DEFAULT_CONTENT'
+            );
+        }
+    }
+}
