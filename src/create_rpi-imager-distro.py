@@ -81,6 +81,15 @@ if __name__ == "__main__":
     
     # distro_name = "FullPageOS"
     distro_name = args.distro_name
+
+    if "/" in distro_name:
+        print("Path detected. Extracting name from path")
+        # Example: /Distros/OctoPi/nightly
+        # Example2 : /Distros/OctoPi/nightly
+        path_data = distro_name.split("/")
+        if len(path_data) < 3:
+            print(f"Error: the distro path provided is not the one expected: {distro_name}")
+        distro_name = distro_name.split("/")[2]
     
     distro_folder = "/Distros/" + distro_name
     nightly = distro_folder + "/" + "nightly"
