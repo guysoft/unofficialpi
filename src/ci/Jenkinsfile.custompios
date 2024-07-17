@@ -1,6 +1,6 @@
 // This is a declerative pipeline
 /* Requires the Docker Pipeline plugin */
-// properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '200')), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], parameters([string(defaultValue: '/mnt/sdc1/ElectricSheepPi', name: 'DISTRO_PATH'), string(defaultValue: '/Distros/ElectricSheepPi/nightly', name: 'FTP_PUBLISH_PATH'), string('VARIANT')]), throttleJobProperty(categories: [], limitOneJobWithMatchingParams: false, maxConcurrentPerNode: 2, maxConcurrentTotal: 2, paramsToUseForLimit: '', throttleEnabled: true, throttleOption: 'project'), pipelineTriggers([cron('0 2 * * *')])])
+// properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '', numToKeepStr: '200')), [$class: 'RebuildSettings', autoRebuild: false, rebuildDisabled: false], parameters([string(defaultValue: '/mnt/sdc1/ElectricSheepPi', name: 'DISTRO_PATH'), string(defaultValue: '/Distros/ElectricSheepPi/nightly', name: 'FTP_PUBLISH_PATH'), string('VARIANT')]), string('BOARD')]), throttleJobProperty(categories: [], limitOneJobWithMatchingParams: false, maxConcurrentPerNode: 2, maxConcurrentTotal: 2, paramsToUseForLimit: '', throttleEnabled: true, throttleOption: 'project'), pipelineTriggers([cron('0 2 * * *')])])
 pipeline {
     agent { label 'master' }
     options {
