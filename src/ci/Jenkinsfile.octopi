@@ -12,5 +12,16 @@ pipeline {
                 build job: 'OctoPi - arm64'
             }
         }
+        stage ('OctoPi - le potato') {
+            steps {
+                build job: 'CustomPiOS',
+                      parameters: [
+                         string(name: 'DISTRO_PATH', value: '/mnt/sda1/OctoPi'),
+                         string(name: 'FTP_PUBLISH_PATH', value: '/Distros/OctoPi/debian_lepotato/nightly'),
+                         string(name: 'BOARD', value: 'debian_lepotato')
+                      ]
+            }
+         }
+
     }
 }
