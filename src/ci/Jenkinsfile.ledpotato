@@ -1,0 +1,17 @@
+/* Requires the Docker Pipeline plugin */
+pipeline {
+    agent { label 'master' }
+    stages {
+        stage ('LEDPotato') {
+            steps {
+                build job: 'CustomPiOS',
+                      parameters: [
+                         string(name: 'DISTRO_PATH', value: '/mnt/sda1/LEDPotato'),
+                         string(name: 'FTP_PUBLISH_PATH', value: '/Distros/LEDPotato/nightly'),
+                         string(name: 'BOARD', value: 'debian_lepotato')
+                      ]
+            }
+         }
+
+    }
+}
