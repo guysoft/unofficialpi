@@ -9,7 +9,7 @@ if [ "${VARIANT}" != "" ]; then
 fi
 
 pushd "${DISTRO_PATH}"
-    sudo /usr/local/bin/custompios_build_repo "${DISTRO_PATH}" "${VARIANT}"
+    sudo /usr/local/bin/custompios_build_repo "${DISTRO_PATH}" "${VARIANT}" "${BOARD}"
     
     
     # Create zip with date naming
