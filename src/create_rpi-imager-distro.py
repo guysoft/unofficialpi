@@ -59,13 +59,26 @@ def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False)
 
             # Handle device list
             devices_list = DEVICES_ALL
+
+            # Handle missing 64-bit name bug
+            if not "64-bit" in json_data["name"] and "arm64" in json_data["url"]:
+                print("Append missing 64-bit to arm64 image name")
+                json_data["name"] += " 64-bit"
+            
             if arch == "arm64" or "64-bit" in json_data["name"]:
                 devices_list = DEVICES_ARM64
 
             if "devices" not in json_data:
                 json_data["devices"] = devices_list
 
-            json_data["url"] = url + folder + "/" + date_stamp + "_" + json_data["url"]
+            
+            if "octopi" in json_data["url"]:
+                print("Detected we are updateing OctoPi, using special stable file structure")
+                json_data["url"] = url + folder + "/" + json_data["url"]
+            else:
+                json_data["url"] = url + folder + "/" + date_stamp + "_" + json_data["url"]
+
+            print(json_data["url"])
 
             # inject init format
             json_data["init_format"] = "systemd"
@@ -113,10 +126,11 @@ if __name__ == "__main__":
     tmp_prefix = settings["io"]["tmp"]
     if tmp_prefix == "default":
         tmp_prefix = None
-        
+    
+    STABLE_DISTRO_COUNT = 2
     with pysftp.Connection(hostname, username=username, password=password) as sftp:
         os_list = \
-            get_folder_json(sftp, tmp_prefix, distro_folder, None, 1) + \
+            get_folder_json(sftp, tmp_prefix, distro_folder, None, STABLE_DISTRO_COUNT) + \
                 get_folder_json(sftp, tmp_prefix, nightly, None, 2, True) + \
                     get_folder_json(sftp, tmp_prefix, nightly64, "arm64", 2, True)
         
