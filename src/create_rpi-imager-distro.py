@@ -4,6 +4,7 @@ from tempfile import TemporaryDirectory, mktemp
 import json
 import os
 import io
+import copy
 import yaml
 
 DEVICES_ALL = [
@@ -69,9 +70,14 @@ def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False)
                 devices_list = DEVICES_ARM64
 
             if "devices" not in json_data:
-                json_data["devices"] = devices_list
+                json_data["devices"] = copy.deepcopy(devices_list)
 
-            
+            # FullPageOS does not support rpi1 https://github.com/guysoft/FullPageOS/issues/661
+            print(f'Image name: {json_data["name"]}')
+            if "FullpageOS" in json_data["name"]:
+                print("Remove rpi1 from FullpageOS")
+                json_data["devices"].remove("pi1-32bit")
+
             if "octopi" in json_data["url"]:
                 print("Detected we are updateing OctoPi, using special stable file structure")
                 json_data["url"] = url + folder + "/" + json_data["url"]
