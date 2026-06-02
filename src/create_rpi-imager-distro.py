@@ -64,7 +64,7 @@ def sftp_isfile(sftp, path):
     except:
         return False
 
-def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False):
+def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False, is_rc=False):
     return_value = []
     count = max_count
     if not sftp_exists(sftp, folder):
@@ -104,6 +104,8 @@ def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False)
             if is_nightly:
                 print(json_data["name"])
                 json_data["name"] += " (Nightly)"
+            elif is_rc:
+                json_data["name"] += " (RC)"
             else:
                 json_data["name"] += " (Stable)"
 
@@ -164,6 +166,8 @@ if __name__ == "__main__":
 
     nightly64 = distro_folder + "/" + "nightly-arm64"
 
+    rc = distro_folder + "/" + "rc"
+
     json_list_output_path = "/rpi-imager/rpi-imager-" + distro_name.lower() + ".json"
     
     settings = None
@@ -187,7 +191,8 @@ if __name__ == "__main__":
         os_list = \
             get_folder_json(sftp, tmp_prefix, distro_folder, None, STABLE_DISTRO_COUNT) + \
                 get_folder_json(sftp, tmp_prefix, nightly, None, 2, True) + \
-                    get_folder_json(sftp, tmp_prefix, nightly64, "arm64", 2, True)
+                    get_folder_json(sftp, tmp_prefix, nightly64, "arm64", 2, True) + \
+                        get_folder_json(sftp, tmp_prefix, rc, None, 2, is_rc=True)
         
         output_json = {"os_list": os_list}
         
