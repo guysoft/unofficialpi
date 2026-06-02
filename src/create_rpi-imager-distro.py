@@ -1,11 +1,12 @@
 #!/usr/bin/python3
-import pysftp
+import paramiko
 from tempfile import TemporaryDirectory, mktemp
 import json
 import os
 import io
 import copy
 import yaml
+from stat import S_ISDIR
 
 DEVICES_ALL = [
     "pi1-32bit",
@@ -26,18 +27,60 @@ DEVICES_ARM64 = [
 
 # Example output: https://unofficialpi.org/rpi-imager/rpi-imager-octopi-klipper.json
 
+class SFTPContextManager:
+    """Context manager for SFTP connections using paramiko"""
+    def __init__(self, hostname, username, password, port=22):
+        self.hostname = hostname
+        self.username = username
+        self.password = password
+        self.port = port
+        self.transport = None
+        self.sftp = None
+        
+    def __enter__(self):
+        self.transport = paramiko.Transport((self.hostname, self.port))
+        self.transport.connect(username=self.username, password=self.password)
+        self.sftp = paramiko.SFTPClient.from_transport(self.transport)
+        return self.sftp
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.sftp:
+            self.sftp.close()
+        if self.transport:
+            self.transport.close()
+
+def sftp_exists(sftp, path):
+    """Check if a remote path exists"""
+    try:
+        sftp.stat(path)
+        return True
+    except FileNotFoundError:
+        return False
+
+def sftp_isfile(sftp, path):
+    """Check if a remote path is a file"""
+    try:
+        return not S_ISDIR(sftp.stat(path).st_mode)
+    except:
+        return False
+
 def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False):
     return_value = []
     count = max_count
-    if not sftp.exists(folder):
+    if not sftp_exists(sftp, folder):
         print("Skipping non-existent folder: " + str(folder))
         return return_value
     with TemporaryDirectory(dir=tmp_prefix) as temp_dir:
         print("Checking folder: " + str(folder))
-        with sftp.cd(folder):             # temporarily chdir to public
-            remote_files = [x.filename for x in sorted(sftp.listdir_attr(), key = lambda f: f.st_mtime, reverse=True)]
+        current_dir = sftp.getcwd()
+        try:
+            sftp.chdir(folder)
+            # List and sort by modification time
+            remote_files = sorted(sftp.listdir_attr(), key=lambda f: f.st_mtime, reverse=True)
+            remote_files = [x.filename for x in remote_files]
+            
             for file_path_basename in remote_files:
-                file_full_path = distro_folder + "/" + file_path_basename
+                file_full_path = folder + "/" + file_path_basename
                 if file_path_basename.endswith(".json"):
                     count -= 1
                     if count < 0:
@@ -45,6 +88,12 @@ def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False)
                     
                     print(file_path_basename)
                     sftp.get(file_path_basename, localpath=os.path.join(temp_dir, file_path_basename))
+        finally:
+            if current_dir:
+                sftp.chdir(current_dir)
+            else:
+                sftp.chdir('/')
+                
         for file_path in sorted(os.listdir(temp_dir), reverse=True):
             full_path = os.path.join(temp_dir, file_path)
             json_data = None
@@ -134,7 +183,7 @@ if __name__ == "__main__":
         tmp_prefix = None
     
     STABLE_DISTRO_COUNT = 2
-    with pysftp.Connection(hostname, username=username, password=password) as sftp:
+    with SFTPContextManager(hostname, username, password) as sftp:
         os_list = \
             get_folder_json(sftp, tmp_prefix, distro_folder, None, STABLE_DISTRO_COUNT) + \
                 get_folder_json(sftp, tmp_prefix, nightly, None, 2, True) + \
@@ -142,13 +191,13 @@ if __name__ == "__main__":
         
         output_json = {"os_list": os_list}
         
-        tmp_file =  mktemp(suffix=".json", dir=tmp_prefix)
+        tmp_file = mktemp(suffix=".json", dir=tmp_prefix)
             
         with open(tmp_file, "w") as w:
             json.dump(output_json, w, indent=2)
         # import code; code.interact(local=dict(globals(), **locals())) 
         
-        if sftp.isfile(json_list_output_path):
+        if sftp_isfile(sftp, json_list_output_path):
             sftp.remove(json_list_output_path)
         sftp.put(tmp_file, remotepath=json_list_output_path)
         
@@ -156,8 +205,3 @@ if __name__ == "__main__":
         
         
         # get_folder_json(sftp, tmp_prefix, distro_folder, 3)
-        
-        
-        
-        
-    

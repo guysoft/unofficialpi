@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from __future__ import division
-import ftplib
 import os
 import sys
 import time
@@ -28,12 +27,25 @@ def ini_to_dict(path):
     return return_value
 
 
-CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.ini")
+CONFIG_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)), "config.ini")
 
 
 def get_config():
     return ini_to_dict(CONFIG_PATH)
 
+def ensure_sftp_directories_exist(sftp: paramiko.SFTPClient, remote_dir: str) -> None:
+    cleaned_remote_dir = remote_dir.strip('/') # Remove leading and trailing slashes
+    sub_directories = cleaned_remote_dir.split("/") # Get all directories
+    current_directory = "/" # Root is start
+    for directory in sub_directories:
+        # Skip empty directory names for accidental double '/'
+        if not directory:
+            continue
+        
+        if directory not in sftp.listdir(current_directory):
+            sftp.mkdir(f"{current_directory}/{directory}")
+        
+        current_directory = f"{current_directory}/{directory}"
 
 def viewBar(a,b):
     # original version
@@ -88,6 +100,7 @@ if __name__ == "__main__":
             sftp.put(filename, path, callback=cbk)
             dest = os.path.join(Directory, os.path.basename(filename))
             print(path,dest)
+            ensure_sftp_directories_exist(sftp, Directory)
             sftp.posix_rename(path, dest)
             done = True
         except IndexError:
