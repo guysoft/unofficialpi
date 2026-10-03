@@ -78,7 +78,7 @@ def get_folder_json(sftp, tmp_prefix, folder, arch, max_count, is_nightly=False)
                 print("Remove rpi1 from FullpageOS")
                 json_data["devices"].remove("pi1-32bit")
 
-            if "octopi" in json_data["url"]:
+            if "octopi" in json_data["url"] and not is_nightly:
                 print("Detected we are updateing OctoPi, using special stable file structure")
                 json_data["url"] = url + folder + "/" + json_data["url"]
             else:
