@@ -39,6 +39,16 @@ Each image has a sibling `<builddate>_rpi-imager-snipplet.json` in its folder
 download URL as `web.url + folder + "/" + <builddate> + "_" + snippet.url`, so
 `snippet.url` is the zip basename **without** the `<builddate>_` prefix.
 
+> **Exception — OctoPi stable.** Stable OctoPi zips are named without a
+> `<builddate>_` prefix (`octopi-bookworm-armhf-lite-1.1.0.zip`), so their
+> snippets live directly in `/Distros/OctoPi` (not a `nightly*`/`rc` folder)
+> and `snippet.url` is the full final basename. The generator keys this off
+> the channel, not the filename: the unprefixed path is used only when the
+> folder is neither nightly nor RC (`"octopi" in url and not (is_nightly or is_rc)`).
+> Nightly/RC OctoPi snippets follow the normal `<builddate>_` rule. Getting
+> this wrong silently strips the date prefix and yields 404s in rpi-imager
+> (OctoPi #843 stable, OctoPi #874 nightly).
+
 ```json
 {
   "name": "FullpageOS",
